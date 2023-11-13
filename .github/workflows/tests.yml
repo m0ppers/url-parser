@@ -3,7 +3,6 @@ name: Tests
 on:
   pull_request:
   push:
-    branches: ["master"]
 
 jobs:
   test:
@@ -13,17 +12,16 @@ jobs:
 
     strategy:
       matrix:
-        node: [10, 12, 13]
+        node: [12, 14, 18, 20, 21]
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Use node ${{ matrix.node }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-          registry-url: https://registry.npmjs.org
 
       - name: Install
         run: npm ci

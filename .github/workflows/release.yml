@@ -1,18 +1,14 @@
 name: Release
 
 on:
-  pull_request:
-  push:
-    branches: ["master"]
+  workflow_dispatch:
 
 jobs:
   release:
     name: Trigger release
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
     steps:
-      - uses: actions/checkout@v2
-
+      - uses: actions/checkout@v4
       - name: Prepare repository
         run: |
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -28,12 +24,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Create release
+      - name: Prepare npm config for github package registry
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          npx auto shipit
+          cat <<EOF > ~/.npmrc
+          //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+          @cliqz:registry=https://npm.pkg.github.com
+          EOF
+      - name: Create release
+        run: npm publish
