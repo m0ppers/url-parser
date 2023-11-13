@@ -535,9 +535,9 @@ export default class implements IURLExtended {
     const slashesLen = this.slashes.length;
     let authorityIncluded = slashesLen >= 2;
     // file: is a "special" scheme as per spec
-    if (this._protocol == 'file:') {
+    if (this._protocol === 'file:') {
       // ansolute path. decrement index so the slash is included in pathname
-      if (slashesLen == 1) {
+      if (slashesLen === 1) {
         authorityIncluded = false;
         index--;
       } else if (slashesLen > 2) {
