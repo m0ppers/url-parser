@@ -89,9 +89,14 @@ describe('URL Spec', () => {
   });
 
   describe('Mutation', () => {
-    const urlString = 'https://user:pass@example.com:8080/test?query=test#title';
+    const urlString =
+      'https://user:pass@example.com:8080/test?query=test#title';
 
-    const testMutation = (name: string, mutate: (url: URLSpec) => void, startUrl = urlString) => {
+    const testMutation = (
+      name: string,
+      mutate: (url: URLSpec) => void,
+      startUrl = urlString,
+    ) => {
       it(name, () => {
         const expected = new URLSpec(startUrl);
         const actual = new URL(startUrl);
@@ -171,10 +176,14 @@ describe('URL Spec', () => {
       url.hash = '#anchor';
     });
 
-    testMutation('protocol and hostname flip', (url) => {
-      url.protocol = 'http:';
-      url.hostname = 'www.example.com';
-    }, 'https://cliqz.com/');
+    testMutation(
+      'protocol and hostname flip',
+      (url) => {
+        url.protocol = 'http:';
+        url.hostname = 'www.example.com';
+      },
+      'https://cliqz.com/',
+    );
 
     testMutation('searchParams', (url: URL) => {
       url.searchParams.append('test', 'value');
@@ -254,6 +263,24 @@ describe('Divergence from URL Spec', () => {
     expect(expected.pathname).toBe('/test');
   });
 
+  it('Does allow relative file paths with trailing slashes', () => {
+    const urlString = 'file:test/';
+    const expected = new URLSpec(urlString);
+    const actual = new URL(urlString);
+
+    expect(actual.hash).toBe(expected.hash);
+    expect(actual.password).toBe(expected.password);
+    expect(actual.protocol).toBe(expected.protocol);
+    expect(actual.search).toBe(expected.search);
+    expect(actual.username).toBe(expected.username);
+    expect(actual.host).toBe(expected.host);
+    expect(actual.hostname).toBe(expected.hostname);
+
+    // relative pathnames are not allowed per spec and are interpreted as absolute paths in the spec
+    expect(actual.pathname).toBe('test/');
+    expect(expected.pathname).toBe('/test/');
+  });
+
   it('Does allow absolute pathnames without authority', () => {
     const urlString = 'file:/test';
     const expected = new URLSpec(urlString);
@@ -291,5 +318,41 @@ describe('Divergence from URL Spec', () => {
     // spec recommends origin null
     expect(expected.origin).toBe('null');
     expect(actual.origin).toBe('file://hostname');
+  });
+
+  it('Allows setting relative pathnames for the file protocol', () => {
+    const urlString = 'file:/file';
+    const url = new URL(urlString);
+
+    expect(url.toString()).toBe('file:/file');
+    url.pathname = 'file';
+    expect(url.toString()).toBe('file:file');
+  });
+
+  it('Does make pathnames absolute for the file protocol when authority was set', () => {
+    const urlString = 'file://host/file';
+    const url = new URL(urlString);
+
+    expect(url.toString()).toBe('file://host/file');
+    url.pathname = 'file';
+    expect(url.toString()).toBe('file://host/file');
+  });
+
+  it('Does allow setting absolute pathnames for the file protocol when authority was set', () => {
+    const urlString = 'file://host/file';
+    const url = new URL(urlString);
+
+    expect(url.toString()).toBe('file://host/file');
+    url.pathname = '/file';
+    expect(url.toString()).toBe('file://host/file');
+  });
+
+  it('Does allow setting absolute pathnames for the file protocol when authority was set and we have multiple slashes', () => {
+    const urlString = 'file://host///file';
+    const url = new URL(urlString);
+
+    expect(url.toString()).toBe('file://host///file');
+    url.pathname = '//file';
+    expect(url.toString()).toBe('file://host//file');
   });
 });

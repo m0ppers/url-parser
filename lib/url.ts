@@ -4,7 +4,10 @@ import URLSearchParamsWrapper from './search-params-wrapper';
 import { IURLExtended } from './types';
 import URLSearchParams from './url-search-params';
 
-function mutate(url: IURLExtended, changes: Partial<IURLExtended>): ImmutableURL {
+function mutate(
+  url: IURLExtended,
+  changes: Partial<IURLExtended>,
+): ImmutableURL {
   const self = {
     hash: changes.hash !== undefined ? changes.hash : url.hash,
     host: changes.host !== undefined ? changes.host : url.host,
@@ -15,6 +18,7 @@ function mutate(url: IURLExtended, changes: Partial<IURLExtended>): ImmutableURL
     protocol: changes.protocol !== undefined ? changes.protocol : url.protocol,
     search: changes.search !== undefined ? changes.search : url.search,
     username: changes.username !== undefined ? changes.username : url.username,
+    slashes: changes.slashes !== undefined ? changes.slashes : url.slashes,
   };
   if (changes.hostname || changes.port) {
     if (self.protocol === 'https:' && self.port === '443') {
@@ -32,7 +36,7 @@ function mutate(url: IURLExtended, changes: Partial<IURLExtended>): ImmutableURL
     ? `:${self.password}@`
     : '';
   return new ImmutableURL(
-    `${self.protocol}${url.slashes}${user}${self.host}${self.pathname}${self.search}${self.hash}`,
+    `${self.protocol}${self.slashes}${user}${self.host}${self.pathname}${self.search}${self.hash}`,
   );
 }
 
@@ -113,10 +117,30 @@ export default class implements IURLExtended {
   }
 
   public set pathname(value: string) {
-    const pathname =
-      value.charCodeAt(0) === CODE_FORWARD_SLASH ? value : `/${value}`;
+    let forwardSlashRequired = false;
+    let pathname;
+    let slashes;
+    if (this.protocol == 'file:') {
+      pathname = value;
+      if (this.slashes.length >= 2) {
+        // original path had authority
+        slashes = '//';
+        forwardSlashRequired = true;
+      } else {
+        slashes = '';
+      }
+    } else {
+      forwardSlashRequired = true;
+      pathname = value;
+    }
+    if (forwardSlashRequired) {
+      pathname =
+        value.charCodeAt(0) === CODE_FORWARD_SLASH ? pathname : `/${pathname}`;
+      slashes = this.slashes;
+    }
     this.url = mutate(this, {
       pathname,
+      slashes,
     });
   }
 
