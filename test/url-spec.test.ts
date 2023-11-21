@@ -355,4 +355,11 @@ describe('Divergence from URL Spec', () => {
     url.pathname = '//file';
     expect(url.toString()).toBe('file://host//file');
   });
+
+  it('Does allow parsing empty file URL', () => {
+    const urlString = 'file:';
+    const url = new URL(urlString);
+
+    expect(url.toString()).toBe('file:');
+  });
 });

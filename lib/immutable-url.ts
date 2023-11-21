@@ -500,6 +500,7 @@ export default class implements IURLExtended {
 
     end = this._href.length - 1;
     let hasUpper = false;
+    let hasProtocol = false;
     // Parse protocol
     for (; index <= end; index += 1) {
       const code = this._href.charCodeAt(index);
@@ -509,6 +510,7 @@ export default class implements IURLExtended {
           this._protocol = this._protocol.toLowerCase();
           this._href = `${this._protocol}${this._href.slice(index + 1)}`;
         }
+        hasProtocol = true;
         break;
       } else if (!isValidProtocolChar(code)) {
         // non alphabet character in protocol - not a valid protocol
@@ -518,8 +520,12 @@ export default class implements IURLExtended {
       }
     }
 
-    if (index >= end) {
+    if (!hasProtocol) {
       throw new TypeError('No protocol');
+    }
+
+    if (index === end) {
+      return;
     }
 
     // skip '/' after ':'
